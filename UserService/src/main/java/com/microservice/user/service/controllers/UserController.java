@@ -2,6 +2,8 @@ package com.microservice.user.service.controllers;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,10 +16,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.microservice.user.service.entities.UserEntity;
 import com.microservice.user.service.services.UserService;
+import com.microservice.user.service.services.impl.UserServiceImpl;
+
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 @RestController
 @RequestMapping("/user")
 public class UserController {
+
+	private Logger LOG = LoggerFactory.getLogger(UserServiceImpl.class);
 
 	@Autowired
 	private UserService userService;
@@ -27,17 +34,29 @@ public class UserController {
 		UserEntity entity = this.userService.addUser(user);
 		return ResponseEntity.status(HttpStatus.CREATED).body(entity);
 	}
-	
+
 	@GetMapping("/{userId}")
+	@CircuitBreaker(name = "ratingHotelBreaker", fallbackMethod = "ratingHotelFallback")
 	public ResponseEntity<UserEntity> getUser(@PathVariable String userId) throws Exception {
-		
+
+		LOG.info("Get Single User Handler: UserController");
 		UserEntity user = this.userService.getUser(userId);
-		return ResponseEntity.ok(user);	
+		return ResponseEntity.ok(user);
 	}
-	
+
+//	creating fall back method for circuit breaker
+	public ResponseEntity<UserEntity> ratingHotelFallback(String userId, Exception e) {
+
+		LOG.info("Fall Back is Executed Because Service is Down : ", e.getMessage());
+		UserEntity user = UserEntity.builder().email("dummy@gmail.com").name("dummy")
+				.about("this user is dummy because some service down").userId("141234").build();
+		return new ResponseEntity<UserEntity>(user, HttpStatus.OK);
+
+	}
+
 	@GetMapping()
 	public ResponseEntity<List<UserEntity>> getAllUser() {
-		
+
 		List<UserEntity> list = this.userService.getAllUser();
 		return ResponseEntity.ok(list);
 	}

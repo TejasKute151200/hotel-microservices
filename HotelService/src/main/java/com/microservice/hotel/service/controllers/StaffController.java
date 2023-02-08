@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class StaffController {
 	@GetMapping()
 	public ResponseEntity<List<String>> getStaffs() {
+		
 		List<String> list = Arrays.asList("Ram", "Shyam", "Sita", "Krishna");
+		
 		return new ResponseEntity<>(list, HttpStatus.OK);
 	}
 }

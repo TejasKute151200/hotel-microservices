@@ -50,6 +50,7 @@ spring:
 #      defaultZone: http://localhost:8761/eureka  
 
 # circuit-breaker
+# management
 management:
   health:
     circuitbreakers:
@@ -63,8 +64,10 @@ management:
   endpoint:
     health:
       show-details: always
-      
+   
+#  resilience4j
 resilience4j:
+#  circuitbreaker
   circuitbreaker:
     instances:
       ratingHotelBreaker:
@@ -88,6 +91,22 @@ resilience4j:
 #        sliding-window-size: 10
 #        sliding-window-type: count-based 
 
+#  retry
+  retry:
+    instances:
+      ratingHotelService:
+        max-attempts: 3
+        wait-duration: 5s
+        
+#  ratelimiter
+  ratelimiter:
+    instances:
+      userRateLimiter:
+        limit-refresh-period: 4s
+        limit-for-period: 2
+        timeout-duration: 2s
+      
+  
 
 
 

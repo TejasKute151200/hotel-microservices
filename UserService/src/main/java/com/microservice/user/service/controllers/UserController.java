@@ -19,6 +19,8 @@ import com.microservice.user.service.services.UserService;
 import com.microservice.user.service.services.impl.UserServiceImpl;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 
 @RestController
 @RequestMapping("/user")
@@ -35,19 +37,29 @@ public class UserController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(entity);
 	}
 
+	int retryCount = 1;
+
 	@GetMapping("/{userId}")
-	@CircuitBreaker(name = "ratingHotelBreaker", fallbackMethod = "ratingHotelFallback")
+//	@CircuitBreaker(name = "ratingHotelBreaker", fallbackMethod = "ratingHotelFallback")
+//	@Retry(name = "ratingHotelService", fallbackMethod = "ratingHotelFallback")
+	@RateLimiter(name = "userRateLimiter" , fallbackMethod = "ratingHotelFallback")
 	public ResponseEntity<UserEntity> getUser(@PathVariable String userId) throws Exception {
 
 		LOG.info("Get Single User Handler: UserController");
+
+		LOG.info("Retry Count: {}", retryCount);
+		retryCount++;
+
 		UserEntity user = this.userService.getUser(userId);
+
 		return ResponseEntity.ok(user);
 	}
 
 //	creating fall back method for circuit breaker
 	public ResponseEntity<UserEntity> ratingHotelFallback(String userId, Exception e) {
 
-		LOG.info("Fall Back is Executed Because Service is Down : ", e.getMessage());
+//		LOG.info("Fall Back is Executed Because Service is Down : ", e.getMessage());
+		
 		UserEntity user = UserEntity.builder().email("dummy@gmail.com").name("dummy")
 				.about("this user is dummy because some service down").userId("141234").build();
 		return new ResponseEntity<UserEntity>(user, HttpStatus.OK);
